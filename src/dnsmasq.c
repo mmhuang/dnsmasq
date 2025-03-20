@@ -1035,6 +1035,9 @@ int main (int argc, char **argv)
     }
 #endif
 
+  if (daemon->redis_url)
+    redis_init_pool();
+
   /* finished start-up - release original process */
   if (err_pipe[1] != -1)
     close(err_pipe[1]);
@@ -1284,6 +1287,10 @@ int main (int argc, char **argv)
 #endif
 
     }
+
+  /* These functions fail rather than aborting on error */
+  if (daemon->redis_pool)
+    redis_free_pool();
 }
 
 static void sig_handler(int sig)

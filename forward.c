@@ -1286,7 +1286,7 @@ static void return_reply(time_t now, struct frec *forward, struct dns_header *he
       {
         union all_addr addr;
         int found = extract_addresses(header, n, domain, now, NULL, NULL, 
-                                     0, 0, NULL, 0, &addr);
+                                    0, 0, NULL, 0, &addr);
         if (found)
           redis_store_dns_record(domain, &addr, 
                                daemon->redis_cache_dsn_ttl);

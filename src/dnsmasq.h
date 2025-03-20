@@ -1273,7 +1273,30 @@ extern struct daemon {
   /* file for packet dumps. */
   int dumpfd;
 #endif
+
+  char *redis_url;
+  unsigned int redis_cache_dsn_ttl;
+  unsigned int redis_cache_ptr_ttl; 
+  struct redis_conn_pool *redis_pool;
 } *daemon;
+
+/* Redis pool size and structure definition */
+#define REDIS_POOL_SIZE 8
+
+/* Forward declaration for hiredis context to avoid needing redis headers everywhere */
+struct redisContext;
+
+struct redis_conn_pool {
+  struct redisContext *conns[REDIS_POOL_SIZE];
+  pthread_mutex_t locks[REDIS_POOL_SIZE];
+  int curr_conn;
+};
+
+/* Redis functions */
+void redis_init_pool(void);
+void redis_free_pool(void);
+void redis_store_dns_record(char *domain, union all_addr *addr, int ttl);
+void redis_store_ptr_record(char *ip, char *domain, int ttl);
 
 /* cache.c */
 void cache_init(void);
@@ -1824,4 +1847,10 @@ int add_update_server(int flags,
 		      union mysockaddr *source_addr,
 		      const char *interface,
 		      const char *domain,
-		      union all_addr *local_addr); 
+		      union all_addr *local_addr);
+
+/* Redis functions */
+void redis_init_pool(void);
+void redis_free_pool(void);
+void redis_store_dns_record(char *domain, union all_addr *addr, int ttl);
+void redis_store_ptr_record(char *ip, char *domain, int ttl);

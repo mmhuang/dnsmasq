@@ -28,7 +28,11 @@ CFLAGS        = -Wall -W -O2
 LDFLAGS       = 
 COPTS         = 
 RPM_OPT_FLAGS = 
-LIBS          = 
+LIBS          = -lhiredis
+
+CFLAGS        += -I/usr/include/hiredis
+# For asynchronous Redis operations
+CFLAGS        += -pthread
 
 #################################################################
 
@@ -84,7 +88,7 @@ objs = cache.o rfc1035.o util.o option.o forward.o network.o \
        dhcp-common.o outpacket.o radv.o slaac.o auth.o ipset.o pattern.o \
        domain.o dnssec.o blockdata.o tables.o loop.o inotify.o \
        poll.o rrfilter.o edns0.o arp.o crypto.o dump.o ubus.o \
-       metrics.o hash-questions.o domain-match.o nftset.o
+       metrics.o hash-questions.o domain-match.o nftset.o redis.o
 
 hdrs = dnsmasq.h config.h dhcp-protocol.h dhcp6-protocol.h \
        dns-protocol.h radv-protocol.h ip6addr.h metrics.h

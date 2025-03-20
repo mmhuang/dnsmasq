@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug dnsmasq",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/dnsmasq",
+            "args": ["-p", "54", "--redis-url", "redis://localhost:6379", "--redis-cache-dsn-ttl=86400", "--redis-cache-ptr-ttl=86400", "-d"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build with debug symbols"
+        }
+    ]
+}

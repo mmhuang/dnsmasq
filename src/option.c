@@ -180,7 +180,10 @@ struct myoption {
 #define LOPT_STRIP_SBNET   371
 #define LOPT_STRIP_MAC     372
 #define LOPT_CONF_OPT      373
-#define LOPT_CONF_SCRIPT   374
+#define LOPT_CONF_SCRIPT    374
+#define LOPT_REDIS_URL        375
+#define LOPT_REDIS_DSN_TTL    376
+#define LOPT_REDIS_PTR_TTL    377
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -366,6 +369,9 @@ static const struct myoption opts[] =
     { "log-debug", 0, 0, LOPT_LOG_DEBUG },
     { "umbrella", 2, 0, LOPT_UMBRELLA },
     { "quiet-tftp", 0, 0, LOPT_QUIET_TFTP },
+    { "redis-url", 1, 0, LOPT_REDIS_URL },
+    { "redis-cache-dsn-ttl", 1, 0, LOPT_REDIS_DSN_TTL },
+    { "redis-cache-ptr-ttl", 1, 0, LOPT_REDIS_PTR_TTL },
     { NULL, 0, 0, 0 }
   };
 
@@ -558,6 +564,9 @@ static struct {
   { LOPT_SCRIPT_TIME, OPT_LEASE_RENEW, NULL, gettext_noop("Call dhcp-script when lease expiry changes."), NULL },
   { LOPT_UMBRELLA, ARG_ONE, "[=<optspec>]", gettext_noop("Send Cisco Umbrella identifiers including remote IP."), NULL },
   { LOPT_QUIET_TFTP, OPT_QUIET_TFTP, NULL, gettext_noop("Do not log routine TFTP."), NULL },
+  { LOPT_REDIS_URL, ARG_ONE, "<url>", gettext_noop("Specify Redis server URL for DNS caching."), NULL },
+  { LOPT_REDIS_DSN_TTL, ARG_ONE, "<integer>", gettext_noop("Set TTL in seconds for forward DNS Redis cache entries."), NULL },
+  { LOPT_REDIS_PTR_TTL, ARG_ONE, "<integer>", gettext_noop("Set TTL in seconds for reverse DNS Redis cache entries."), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -4982,6 +4991,20 @@ err:
       }
 #endif
 		
+    case LOPT_REDIS_URL:
+      daemon->redis_url = opt_string_alloc(arg);
+      break;
+
+    case LOPT_REDIS_DSN_TTL:
+      if (!atoi_check(arg, (int *)&daemon->redis_cache_dsn_ttl))
+        ret_err(gen_err);
+      break;
+
+    case LOPT_REDIS_PTR_TTL:
+      if (!atoi_check(arg, (int *)&daemon->redis_cache_ptr_ttl))
+        ret_err(gen_err);
+      break;
+
     default:
       ret_err(_("unsupported option (check that dnsmasq was compiled with DHCP/TFTP/DNSSEC/DBus support)"));
       
@@ -5310,7 +5333,7 @@ struct hostsfile *expand_filelist(struct hostsfile *list)
 			next = ah1->next;
 
 			if (lendir < strlen(ah1->fname) &&
-			    strstr(ah1->fname, ah->fname) == ah1->fname &&
+			    strstr(ah1->fname, ah->fname) == ah->fname &&
 			    ah1->fname[lendir] == '/' &&
 			    strcmp(ah1->fname + lendir + 1, ent->d_name) == 0)
 			  {
@@ -5791,4 +5814,4 @@ void read_opts(int argc, char **argv, char *compile_opts)
       fprintf(stderr, "dnsmasq: %s.\n", _("syntax check OK"));
       exit(0);
     }
-}  
+}
