@@ -1289,7 +1289,7 @@ static void return_reply(time_t now, struct frec *forward, struct dns_header *he
                                     0, 0, NULL, 0, &addr);
         if (found)
           redis_store_dns_record(domain, &addr, 
-                               daemon->redis_cache_dsn_ttl);
+                               daemon->redis_cache_dns_ttl);
           
         // Store PTR record if applicable
         if ((found & F_IPV4) || (found & F_IPV6)) {

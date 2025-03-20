@@ -1276,33 +1276,71 @@ static void return_reply(time_t now, struct frec *forward, struct dns_header *he
 	}
     }
 
-  // Cache successful responses in Redis if configured
-  if (daemon->redis_url && 
-      !(header->hb4 & HB4_CD) && 
-      RCODE(header) == NOERROR)
+// Cache successful responses in Redis if configured
+if (daemon->redis_url && 
+    !(header->hb4 & HB4_CD) && 
+    RCODE(header) == NOERROR)
+  {
+    char *domain = daemon->namebuff;
+    if (extract_request(header, n, domain, NULL))
     {
-      char *domain = daemon->namebuff;
-      if (extract_request(header, n, domain, NULL))
+      /* extract_addresses returns non-zero if there's a rebinding issue 
+         (1 = reject this response), so we only proceed if it returns 0 */
+      int doctored = 0;
+      union all_addr addr;
+      
+      /* Use safe options: no ipsets/nftsets, check_rebind=0, 
+         not ignoring DNSSEC, not marking secure */
+      if (extract_addresses(header, n, domain, now, NULL, NULL, 
+                           0, 0, NULL, 0, &doctored) == 0)
       {
-        union all_addr addr;
-        int found = extract_addresses(header, n, domain, now, NULL, NULL, 
-                                     0, 0, NULL, 0, &addr);
-        if (found)
-          redis_store_dns_record(domain, &addr, 
-                               daemon->redis_cache_dsn_ttl);
-          
-        // Store PTR record if applicable
-        if ((found & F_IPV4) || (found & F_IPV6)) {
-          char ipbuf[INET6_ADDRSTRLEN];
-          if (found & F_IPV4)
-            inet_ntop(AF_INET, &addr.addr4, ipbuf, sizeof(ipbuf));
-          else  
-            inet_ntop(AF_INET6, &addr.addr6, ipbuf, sizeof(ipbuf));
-          redis_store_ptr_record(ipbuf, domain, 
-                               daemon->redis_cache_ptr_ttl);
+        /* Now we need to check if we have actual addresses to cache */
+        struct crec *crecp = NULL;
+        char ipbuf[INET6_ADDRSTRLEN];
+        
+        /* Look for IPv4 addresses */
+        if ((crecp = cache_find_by_name(NULL, domain, now, F_IPV4)))
+        {
+          do {
+            /* Check if record is valid (not negative) */
+            if (!(crecp->flags & (F_NEG | F_NXDOMAIN)) && 
+                (crecp->flags & F_FORWARD))
+            {
+              /* Convert IPv4 address to string */
+              inet_ntop(AF_INET, &crecp->addr.addr4, ipbuf, sizeof(ipbuf));
+              
+              /* Store DNS record with string IP */
+              redis_store_dns_record(domain, ipbuf, daemon->redis_cache_dns_ttl);
+              
+              /* Store PTR record */
+              redis_store_ptr_record(ipbuf, domain, daemon->redis_cache_ptr_ttl);
+            }
+            crecp = cache_find_by_name(crecp, domain, now, F_IPV4);
+          } while (crecp);
+        }
+        
+        /* Look for IPv6 addresses */
+        if ((crecp = cache_find_by_name(NULL, domain, now, F_IPV6)))
+        {
+          do {
+            if (!(crecp->flags & (F_NEG | F_NXDOMAIN)) && 
+                (crecp->flags & F_FORWARD))
+            {
+              /* Convert IPv6 address to string */
+              inet_ntop(AF_INET6, &crecp->addr.addr6, ipbuf, sizeof(ipbuf));
+              
+              /* Store DNS record with string IP */
+              redis_store_dns_record(domain, ipbuf, daemon->redis_cache_dns_ttl);
+              
+              /* Store PTR record */
+              redis_store_ptr_record(ipbuf, domain, daemon->redis_cache_ptr_ttl);
+            }
+            crecp = cache_find_by_name(crecp, domain, now, F_IPV6);
+          } while (crecp);
         }
       }
     }
+  }
 
   free_frec(forward); /* cancel */
 }
@@ -2047,8 +2085,7 @@ unsigned char *tcp_request(int confd, time_t now,
 	  struct auth_zone *zone;
 #endif
 
-	  log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff,
-			       &peer_addr, auth_dns ? "auth" : "query", qtype);
+	  log_query_mysockaddr(F_QUERY | F_FORWARD, daemon->namebuff, &peer_addr, auth_dns ? "auth" : "query", qtype);
 
 #ifdef HAVE_CONNTRACK
 	  is_single_query = 1;

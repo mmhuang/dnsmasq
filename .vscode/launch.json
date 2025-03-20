@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/src/dnsmasq",
-            "args": ["-p", "54", "--redis-url", "redis://localhost:6379", "--redis-cache-dsn-ttl=86400", "--redis-cache-ptr-ttl=86400", "-d"],
+            "args": ["-p", "54", "--redis-url", "redis://localhost:6379", "--redis-cache-dsn-ttl=86400", "--redis-cache-ptr-ttl=86400", "-d", "--filter-AAAA"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

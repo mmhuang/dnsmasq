@@ -182,7 +182,7 @@ struct myoption {
 #define LOPT_CONF_OPT      373
 #define LOPT_CONF_SCRIPT    374
 #define LOPT_REDIS_URL        375
-#define LOPT_REDIS_DSN_TTL    376
+#define LOPT_REDIS_DNS_TTL    376
 #define LOPT_REDIS_PTR_TTL    377
 
 #ifdef HAVE_GETOPT_LONG
@@ -370,7 +370,7 @@ static const struct myoption opts[] =
     { "umbrella", 2, 0, LOPT_UMBRELLA },
     { "quiet-tftp", 0, 0, LOPT_QUIET_TFTP },
     { "redis-url", 1, 0, LOPT_REDIS_URL },
-    { "redis-cache-dsn-ttl", 1, 0, LOPT_REDIS_DSN_TTL },
+    { "redis-cache-dsn-ttl", 1, 0, LOPT_REDIS_DNS_TTL },
     { "redis-cache-ptr-ttl", 1, 0, LOPT_REDIS_PTR_TTL },
     { NULL, 0, 0, 0 }
   };
@@ -565,7 +565,7 @@ static struct {
   { LOPT_UMBRELLA, ARG_ONE, "[=<optspec>]", gettext_noop("Send Cisco Umbrella identifiers including remote IP."), NULL },
   { LOPT_QUIET_TFTP, OPT_QUIET_TFTP, NULL, gettext_noop("Do not log routine TFTP."), NULL },
   { LOPT_REDIS_URL, ARG_ONE, "<url>", gettext_noop("Specify Redis server URL for DNS caching."), NULL },
-  { LOPT_REDIS_DSN_TTL, ARG_ONE, "<integer>", gettext_noop("Set TTL in seconds for forward DNS Redis cache entries."), NULL },
+  { LOPT_REDIS_DNS_TTL, ARG_ONE, "<integer>", gettext_noop("Set TTL in seconds for forward DNS Redis cache entries."), NULL },
   { LOPT_REDIS_PTR_TTL, ARG_ONE, "<integer>", gettext_noop("Set TTL in seconds for reverse DNS Redis cache entries."), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
@@ -4995,14 +4995,18 @@ err:
       daemon->redis_url = opt_string_alloc(arg);
       break;
 
-    case LOPT_REDIS_DSN_TTL:
-      if (!atoi_check(arg, (int *)&daemon->redis_cache_dsn_ttl))
+    case LOPT_REDIS_DNS_TTL:
+      if (!atoi_check(arg, (int *)&daemon->redis_cache_dns_ttl))
         ret_err(gen_err);
+      if (daemon->redis_cache_dns_ttl < 86400)
+        ret_err(_("redis-cache-dsn-ttl must be at least 86400 seconds (24 hours)"));
       break;
 
     case LOPT_REDIS_PTR_TTL:
       if (!atoi_check(arg, (int *)&daemon->redis_cache_ptr_ttl))
         ret_err(gen_err);
+      if (daemon->redis_cache_ptr_ttl < 86400)
+        ret_err(_("redis-cache-ptr-ttl must be at least 86400 seconds (24 hours)"));
       break;
 
     default:
@@ -5517,6 +5521,8 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon->soa_refresh = SOA_REFRESH;
   daemon->soa_retry = SOA_RETRY;
   daemon->soa_expiry = SOA_EXPIRY;
+  daemon->redis_cache_dns_ttl = 86400;
+  daemon->redis_cache_ptr_ttl = 86400;
   
 #ifndef NO_ID
   add_txt("version.bind", "dnsmasq-" VERSION, 0 );

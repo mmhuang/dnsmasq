@@ -3,7 +3,7 @@
 - conf：
 ```
 正向解析redis缓存记录的老化时间
-redis_cache_dsn_ttl:
+redis_cache_dns_ttl:
 
 反向解析redis缓存记录的老化时间
 redis_cache_ptr_ttl:

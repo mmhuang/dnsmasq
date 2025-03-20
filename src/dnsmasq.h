@@ -1275,7 +1275,7 @@ extern struct daemon {
 #endif
 
   char *redis_url;
-  unsigned int redis_cache_dsn_ttl;
+  unsigned int redis_cache_dns_ttl;
   unsigned int redis_cache_ptr_ttl; 
   struct redis_conn_pool *redis_pool;
 } *daemon;
@@ -1295,7 +1295,7 @@ struct redis_conn_pool {
 /* Redis functions */
 void redis_init_pool(void);
 void redis_free_pool(void);
-void redis_store_dns_record(char *domain, union all_addr *addr, int ttl);
+void redis_store_dns_record(char *domain, char *ip, int ttl);
 void redis_store_ptr_record(char *ip, char *domain, int ttl);
 
 /* cache.c */
@@ -1852,5 +1852,5 @@ int add_update_server(int flags,
 /* Redis functions */
 void redis_init_pool(void);
 void redis_free_pool(void);
-void redis_store_dns_record(char *domain, union all_addr *addr, int ttl);
+void redis_store_dns_record(char *domain, char *ip, int ttl);
 void redis_store_ptr_record(char *ip, char *domain, int ttl);

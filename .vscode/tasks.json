@@ -6,12 +6,13 @@
             "type": "shell",
             "command": "make",
             "args": [
-                "all"
+                "all",
+                "CFLAGS=-Wall -W -g -O0"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
-            },
+            }, 
             "problemMatcher": ["$gcc"],
             "presentation": {
                 "reveal": "always",
